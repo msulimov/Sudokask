@@ -1,2 +1,2 @@
 # sudokask
-### NXN AI-powered sudoku puzzle solver using backtracking search and multiple heuristics
+### AI-powered NxN sudoku puzzle solver using backtracking search and multiple heuristics
