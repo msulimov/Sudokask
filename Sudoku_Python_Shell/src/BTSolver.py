@@ -48,7 +48,43 @@ class BTSolver:
                 The bool is true if assignment is consistent, false otherwise.
     """
     def forwardChecking ( self ):
-        return ({},False)
+        output_dictionary = dict()
+        assigned_values = list()
+
+        # Not sure if we are forward check all assigned values or just the latest assigned value
+        # I implemented it so that it goes through all assigned values
+        for c in self.network.getConstraints():
+            for v in c.vars:
+                if v.isAssigned():
+                    assigned_values.append(v)
+
+        for assigned_value in assigned_values:
+            # Gets all the neighbors of the assigned values
+            for neighbor in self.network.getNeighborsOfVariable(assigned_value):
+
+                # Copy of the provided arcConsistency code Check.
+                if neighbor.isChangeable and not neighbor.isAssigned() and \
+                        neighbor.getDomain().contains(assigned_value.getAssignment()):
+
+                    # Removes values from the domain of all neighbors
+                    self.trail.push(neighbor) # push before removing value from domain so that we can restore the domain
+                    neighbor.removeValueFromDomain(assigned_value.getAssignment())
+                    output_dictionary[neighbor.getName()] = neighbor.getDomain()  # I'm not sure what they Dictionary's key is supposed to be
+
+                    # If the neighbor has no possible assignments left, then it's inconsistent
+                    if neighbor.domain.size() == 0:
+                        # This section may also be unnecessary for this function, but it does speed up the search
+                        return output_dictionary, False
+                    # If it only has one possible assignment, we might as well assign it
+                    elif neighbor.domain.size() == 1:
+                        # This portion probably does not need to be implemented, but it does speed up search.
+                        # We may have to remove this for the submission
+
+                        self.trail.push(neighbor)  # The program says to push before assigning values, but I don't think it is strictly necessary. It still works
+                        neighbor.assignValue(neighbor.domain.values[0])
+                        assigned_values.append(neighbor)
+
+        return output_dictionary, self.assignmentsCheck()
 
     # =================================================================
 	# Arc Consistency
