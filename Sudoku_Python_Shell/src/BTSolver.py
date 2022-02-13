@@ -203,7 +203,27 @@ class BTSolver:
     """
 
     def MRVwithTieBreaker(self):
-        return None
+        number_domain_values = list()
+        for c in self.network.getConstraints():
+            for v in c.vars:
+                if not v.isAssigned():
+                    number_domain_values.append((v, v.size()))
+        number_domain_values.sort(key=lambda x: x[1])
+        smallest_domain = number_domain_values[0][1]
+        largest_unassigned_neighbor_count = 0
+        variable_to_choose = number_domain_values[0][0]
+        for variable, domain_size in number_domain_values:
+            if domain_size == smallest_domain:
+                unassigned_count = 0
+                for neighbor in self.network.getNeighborsOfVariable(variable):
+                    if not neighbor.isAssigned():
+                        unassigned_count += 1
+                if unassigned_count > largest_unassigned_neighbor_count:
+                    largest_unassigned_neighbor_count = unassigned_count
+                    variable_to_choose = variable
+            else:
+                break
+        return variable_to_choose
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
