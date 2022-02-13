@@ -183,7 +183,14 @@ class BTSolver:
     """
 
     def getMRV(self):
-        return None
+        number_domain_values = list()
+        for c in self.network.getConstraints():
+            for v in c.vars:
+                if not v.isAssigned():
+                    number_domain_values.append((v, v.size()))
+        number_domain_values.sort(key=lambda x: x[1])
+
+        return number_domain_values[0][0]
 
     """
         Part 2 TODO: Implement the Minimum Remaining Value Heuristic
