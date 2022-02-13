@@ -98,7 +98,7 @@ class BTSolver:
 
                         self.trail.push(neighbor)  # push to trail so can backtrack later
                         neighbor.assignValue(neighbor.domain.values[0])  # assign the last remaining value for neighbor
-                        if not self.checkConsistency(last_assigned_var=last_assigned_var):  # perform recursive call
+                        if not self.checkConsistency(last_assigned_var=neighbor):  # perform recursive call
                             return output_dictionary, False
 
         return output_dictionary, self.assignmentsCheck()
