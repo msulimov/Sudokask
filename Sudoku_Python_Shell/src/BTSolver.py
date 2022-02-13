@@ -54,36 +54,36 @@ class BTSolver:
 
     def forwardChecking(self, **kwargs) -> ({str: Domain}, bool):
         output_dictionary = dict()
-        assigned_values = list()
+        assigned_vars = list()
 
         last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
 
         if last_assigned_var is not None:
             # if called after assigning a var, do forward checking on its neighbors only
-            assigned_values.append(last_assigned_var)
+            assigned_vars.append(last_assigned_var)
 
         else:
             # if initial call where board uninitialized, forward check on all assigned vars
             for v in self.network.getVariables():
                 if v.isAssigned():
-                    assigned_values.append(v)
+                    assigned_vars.append(v)
 
-        for assigned_value in assigned_values:
+        for assigned_var in assigned_vars:
 
             # loop through all the neighbors of assigned vars
-            for neighbor in self.network.getNeighborsOfVariable(assigned_value):
+            for neighbor in self.network.getNeighborsOfVariable(assigned_var):
 
                 # if neighbor not an initial variable on sudoku board
                 # and the neighbor is not yet assigned
                 # and neighbor's domain contains the newly assigned variable's value
                 if neighbor.isChangeable and not neighbor.isAssigned() and \
-                        neighbor.getDomain().contains(assigned_value.getAssignment()):
+                        neighbor.getDomain().contains(assigned_var.getAssignment()):
                     # Remove the assigned variable's value from the domain of the neighbor and check its domain after
 
                     self.trail.push(neighbor)  # push to trail revert neighbor when backtracking
 
                     # remove assigned variable's value value from neighbor
-                    neighbor.removeValueFromDomain(assigned_value.getAssignment())
+                    neighbor.removeValueFromDomain(assigned_var.getAssignment())
 
                     # update output dictionary with new neighbor's domain for grading
                     output_dictionary[neighbor.getName()] = neighbor.getDomain()
@@ -228,27 +228,12 @@ class BTSolver:
     """
 
     def MRVwithTieBreaker(self):
-        number_domain_values = list()
-        for c in self.network.getConstraints():
-            for v in c.vars:
-                if not v.isAssigned():
-                    number_domain_values.append((v, v.size()))
-        number_domain_values.sort(key=lambda x: x[1])
-        smallest_domain = number_domain_values[0][1]
-        largest_unassigned_neighbor_count = 0
-        variable_to_choose = number_domain_values[0][0]
-        for variable, domain_size in number_domain_values:
-            if domain_size == smallest_domain:
-                unassigned_count = 0
-                for neighbor in self.network.getNeighborsOfVariable(variable):
-                    if not neighbor.isAssigned():
-                        unassigned_count += 1
-                if unassigned_count > largest_unassigned_neighbor_count:
-                    largest_unassigned_neighbor_count = unassigned_count
-                    variable_to_choose = variable
-            else:
-                break
-        return variable_to_choose
+
+        minimum_remaining_value = self.getMRV().size()
+        min_remaining_value_vars = [var for var in self.network.getVariables() if var.size() == minimum_remaining_value]
+        maximum_degree = max(sum(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()) for var in min_remaining_value_vars)
+        return [var for var in min_remaining_value_vars
+                if len(self.network.getNeighborsOfVariable(var)) == maximum_degree]
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
