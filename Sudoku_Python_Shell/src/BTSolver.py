@@ -122,6 +122,7 @@ class BTSolver:
                     if neighbor.domain.size() == 1:
                         neighbor.assignValue(neighbor.domain.values[0])
                         assignedVars.append(neighbor)
+        return self.assignmentsCheck()
 
     """
         Part 2 TODO: Implement both of Norvig's Heuristics
@@ -148,8 +149,32 @@ class BTSolver:
         """
 
         last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+        output_dict = {}
 
-        return ({}, False)
+        if not self.forwardChecking(**kwargs)[1]:  # first Norvig check which is Forward Checking
+            return output_dict, False
+
+        n = self.gameboard.n  # number of different values each variable can take
+        value_freq = {}  # dict of values to count up with frequencies
+
+        if last_assigned_var is None:  # only check the most recently assigned variable's value
+            value_freq.update(((i, 0) for i in range(1, n + 1)))
+        else:  # if from board initialization, check all the values
+            value_freq[last_assigned_var.getDomain()[0]] = 0
+
+        for var in self.network.getVariables():  # count up values from variables that have been assigned
+            if var.isAssigned():
+                value_freq[var.getDomain()[0]] += 1
+
+        for value, count in value_freq:
+            if count == n - 1:  # if there is a value that needs to be assigned to one more spot
+                for var in self.network.getVariables():  # assign it to the var with the value in its domain
+                    if value in var.getDomain():
+                        self.trail.push(var)  # save original var to the trail for backtracking
+                        var.assign_value(value)  # assign the value to the var
+                        output_dict[var.getName()] = value  # save to output dict for grading
+                        # don't need to update neighbors since no other variables contain value in their domain
+        return output_dict, self.checkConsistency()
 
     """
          Optional TODO: Implement your own advanced Constraint Propagation
@@ -162,7 +187,11 @@ class BTSolver:
 
         last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
 
-        return False
+        if last_assigned_var is None: # if initial board, perform arc-consistency
+            if not self.checkConsistency():
+                return False
+
+        return self.norvigCheck(**kwargs)[1]
 
     # ==================================================================
     # Variable Selectors
@@ -187,11 +216,7 @@ class BTSolver:
 
         return min((var for var in self.network.getConstraints() if not var.isAssigned()), key=lambda x: x.size())
 
-        # for v in self.network.getVariables():  # loop through all the constraints
-        #     if not v.isAssigned() and v.size() < min_values:
-        #         min_var = v
-        #         min_values = v.size()
-        # return min_var
+
 
     """
         Part 2 TODO: Implement the Minimum Remaining Value Heuristic
