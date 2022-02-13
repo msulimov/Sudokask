@@ -1,11 +1,12 @@
 import SudokuBoard
-import Variable
-import Domain
+from Variable import Variable
+from Domain import Domain
 import Trail
 import Constraint
 import ConstraintNetwork
 import time
 import random
+
 
 class BTSolver:
 
@@ -13,7 +14,7 @@ class BTSolver:
     # Constructors
     # ==================================================================
 
-    def __init__ ( self, gb, trail, val_sh, var_sh, cc ):
+    def __init__(self, gb, trail, val_sh, var_sh, cc):
         self.network = ConstraintNetwork.ConstraintNetwork(gb)
         self.hassolution = False
         self.gameboard = gb
@@ -28,7 +29,7 @@ class BTSolver:
     # ==================================================================
 
     # Basic consistency check, no propagation done
-    def assignmentsCheck ( self ):
+    def assignmentsCheck(self):
         for c in self.network.getConstraints():
             if not c.isConsistent():
                 return False
@@ -44,52 +45,68 @@ class BTSolver:
             the square's neighbors.
 
         Note: remember to trail.push variables before you assign them
-        Return: a tuple of a dictionary and a bool. The dictionary contains all MODIFIED variables, mapped to their MODIFIED domain.
-                The bool is true if assignment is consistent, false otherwise.
+        Return: a tuple of a dictionary and a bool. 
+            The dictionary contains all MODIFIED variables, mapped to their MODIFIED domain.
+            The bool is true if assignment is consistent, false otherwise.
     """
-    def forwardChecking ( self ):
+
+    def forwardChecking(self, **kwargs) -> ({str: Domain}, bool):
         output_dictionary = dict()
         assigned_values = list()
 
-        # Not sure if we are forward check all assigned values or just the latest assigned value
-        # I implemented it so that it goes through all assigned values
-        for c in self.network.getConstraints():
-            for v in c.vars:
-                if v.isAssigned():
-                    assigned_values.append(v)
+        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+
+        if last_assigned_var is not None:
+            # if called after assigning a var, do forward checking on its neighbors only
+            assigned_values.append(last_assigned_var)
+
+        else:
+            # if initial call where board uninitialized, forward check on all assigned vars
+            for c in self.network.getConstraints():
+                for v in c.vars:
+                    if v.isAssigned():
+                        assigned_values.append(v)
 
         for assigned_value in assigned_values:
-            # Gets all the neighbors of the assigned values
+
+            # loop through all the neighbors of assigned vars
             for neighbor in self.network.getNeighborsOfVariable(assigned_value):
 
-                # Copy of the provided arcConsistency code Check.
+                # if neighbor not an initial variable on sudoku board
+                # and the neighbor is not yet assigned
+                # and neighbor's domain contains the newly assigned variable's value
                 if neighbor.isChangeable and not neighbor.isAssigned() and \
                         neighbor.getDomain().contains(assigned_value.getAssignment()):
+                    # Remove the assigned variable's value from the domain of the neighbor and check its domain after
 
-                    # Removes values from the domain of all neighbors
-                    self.trail.push(neighbor) # push before removing value from domain so that we can restore the domain
+                    self.trail.push(neighbor)  # push to trail revert neighbor when backtracking
+
+                    # remove assigned variable's value value from neighbor
                     neighbor.removeValueFromDomain(assigned_value.getAssignment())
-                    output_dictionary[neighbor.getName()] = neighbor.getDomain()  # I'm not sure what they Dictionary's key is supposed to be
 
-                    # If the neighbor has no possible assignments left, then it's inconsistent
+                    # update output dictionary with new neighbor's domain for grading
+                    output_dictionary[neighbor.getName()] = neighbor.getDomain()
+
+                    # do some further O(1) checks to see if assignment consistent
+
+                    # If the neighbor has no more values in domain, then it's inconsistent since it is unassigned still
                     if neighbor.domain.size() == 0:
-                        # This section may also be unnecessary for this function, but it does speed up the search
                         return output_dictionary, False
-                    # If it only has one possible assignment, we might as well assign it
-                    elif neighbor.domain.size() == 1:
-                        # This portion probably does not need to be implemented, but it does speed up search.
-                        # We may have to remove this for the submission
 
-                        self.trail.push(neighbor)  # The program says to push before assigning values, but I don't think it is strictly necessary. It still works
-                        neighbor.assignValue(neighbor.domain.values[0])
-                        assigned_values.append(neighbor)
+                    # If neighbor has only 1 value in domain, assign it and check consistency
+                    elif neighbor.domain.size() == 1:
+
+                        self.trail.push(neighbor)  # push to trail so can backtrack later
+                        neighbor.assignValue(neighbor.domain.values[0])  # assign the last remaining value for neighbor
+                        if not self.checkConsistency(last_assigned_var=last_assigned_var):  # perform recursive call
+                            return output_dictionary, False
 
         return output_dictionary, self.assignmentsCheck()
 
     # =================================================================
-	# Arc Consistency
-	# =================================================================
-    def arcConsistency( self ):
+    # Arc Consistency
+    # =================================================================
+    def arcConsistency(self):
         assignedVars = []
         for c in self.network.constraints:
             for v in c.vars:
@@ -98,13 +115,13 @@ class BTSolver:
         while len(assignedVars) != 0:
             av = assignedVars.pop(0)
             for neighbor in self.network.getNeighborsOfVariable(av):
-                if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(av.getAssignment()):
+                if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(
+                        av.getAssignment()):
                     neighbor.removeValueFromDomain(av.getAssignment())
                     if neighbor.domain.size() == 1:
                         neighbor.assignValue(neighbor.domain.values[0])
                         assignedVars.append(neighbor)
 
-    
     """
         Part 2 TODO: Implement both of Norvig's Heuristics
 
@@ -122,7 +139,15 @@ class BTSolver:
 		        that were ASSIGNED during the whole NorvigCheck propagation, and mapped to the values that they were assigned.
                 The bool is true if assignment is consistent, false otherwise.
     """
-    def norvigCheck ( self ):
+
+    def norvigCheck(self, **kwargs):
+        """
+        Building on forward checking, also checks that any values that appear n-1 times in the board can have
+        the nth value assigned without being inconsistent
+        """
+
+        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+
         return ({}, False)
 
     """
@@ -131,7 +156,11 @@ class BTSolver:
          Completing the three tourn heuristic will automatically enter
          your program into a tournament.
      """
-    def getTournCC ( self ):
+
+    def getTournCC(self, **kwargs):
+
+        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+
         return False
 
     # ==================================================================
@@ -139,7 +168,7 @@ class BTSolver:
     # ==================================================================
 
     # Basic variable selector, returns first unassigned variable
-    def getfirstUnassignedVariable ( self ):
+    def getfirstUnassignedVariable(self):
         for v in self.network.variables:
             if not v.isAssigned():
                 return v
@@ -152,7 +181,8 @@ class BTSolver:
 
         Return: The unassigned variable with the smallest domain
     """
-    def getMRV ( self ):
+
+    def getMRV(self):
         return None
 
     """
@@ -163,7 +193,8 @@ class BTSolver:
                 If there are multiple variables that have the same smallest domain with the same number of unassigned neighbors, add them to the list of Variables.
                 If there is only one variable, return the list of size 1 containing that variable.
     """
-    def MRVwithTieBreaker ( self ):
+
+    def MRVwithTieBreaker(self):
         return None
 
     """
@@ -172,7 +203,8 @@ class BTSolver:
          Completing the three tourn heuristic will automatically enter
          your program into a tournament.
      """
-    def getTournVar ( self ):
+
+    def getTournVar(self):
         return None
 
     # ==================================================================
@@ -180,9 +212,9 @@ class BTSolver:
     # ==================================================================
 
     # Default Value Ordering
-    def getValuesInOrder ( self, v ):
+    def getValuesInOrder(self, v):
         values = v.domain.values
-        return sorted( values )
+        return sorted(values)
 
     """
         Part 1 TODO: Implement the Least Constraining Value Heuristic
@@ -193,7 +225,8 @@ class BTSolver:
         Return: A list of v's domain sorted by the LCV heuristic
                 The LCV is first and the MCV is last
     """
-    def getValuesLCVOrder ( self, v ):
+
+    def getValuesLCVOrder(self, v):
         return None
 
     """
@@ -202,14 +235,15 @@ class BTSolver:
          Completing the three tourn heuristic will automatically enter
          your program into a tournament.
      """
-    def getTournVal ( self, v ):
+
+    def getTournVal(self, v):
         return None
 
     # ==================================================================
     # Engine Functions
     # ==================================================================
 
-    def solve ( self, time_left=600):
+    def solve(self, time_left=600):
         if time_left <= 60:
             return -1
 
@@ -221,51 +255,54 @@ class BTSolver:
         v = self.selectNextVariable()
 
         # check if the assigment is complete
-        if ( v == None ):
+        if (v == None):
             # Success
             self.hassolution = True
             return 0
 
         # Attempt to assign a value
-        for i in self.getNextValues( v ):
+        for i in self.getNextValues(v):
 
             # Store place in trail and push variable's state on trail
-            self.trail.placeTrailMarker()
-            self.trail.push( v )
+            self.trail.placeTrailMarker()  # makes undo backtrack to this position in the trail
+            self.trail.push(v)
 
             # Assign the value
-            v.assignValue( i )
+            v.assignValue(i)
 
             # Propagate constraints, check consistency, recur
-            if self.checkConsistency():
-                elapsed_time = time.time() - start_time 
+            if self.checkConsistency(last_assigned_var=v):  # add variable last assigned for optimized checking
+                elapsed_time = time.time() - start_time
                 new_start_time = time_left - elapsed_time
                 if self.solve(time_left=new_start_time) == -1:
                     return -1
-                
+
             # If this assignment succeeded, return
             if self.hassolution:
                 return 0
 
             # Otherwise backtrack
             self.trail.undo()
-        
+
         return 0
 
-    def checkConsistency ( self ):
+    def checkConsistency(self, **kwargs):
+
+        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+
         if self.cChecks == "forwardChecking":
-            return self.forwardChecking()[1]
+            return self.forwardChecking(last_assigned_var=last_assigned_var)[1]
 
         if self.cChecks == "norvigCheck":
-            return self.norvigCheck()[1]
+            return self.norvigCheck(last_assigned_var=last_assigned_var)[1]
 
         if self.cChecks == "tournCC":
-            return self.getTournCC()
+            return self.getTournCC(last_assigned_var=last_assigned_var)
 
         else:
             return self.assignmentsCheck()
 
-    def selectNextVariable ( self ):
+    def selectNextVariable(self):
         if self.varHeuristics == "MinimumRemainingValue":
             return self.getMRV()
 
@@ -278,15 +315,15 @@ class BTSolver:
         else:
             return self.getfirstUnassignedVariable()
 
-    def getNextValues ( self, v ):
+    def getNextValues(self, v):
         if self.valHeuristics == "LeastConstrainingValue":
-            return self.getValuesLCVOrder( v )
+            return self.getValuesLCVOrder(v)
 
         if self.valHeuristics == "tournVal":
-            return self.getTournVal( v )
+            return self.getTournVal(v)
 
         else:
-            return self.getValuesInOrder( v )
+            return self.getValuesInOrder(v)
 
-    def getSolution ( self ):
+    def getSolution(self):
         return self.network.toSudokuBoard(self.gameboard.p, self.gameboard.q)
