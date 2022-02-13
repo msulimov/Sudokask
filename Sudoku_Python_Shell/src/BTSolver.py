@@ -1,3 +1,5 @@
+import sys
+
 import SudokuBoard
 from Variable import Variable
 from Domain import Domain
@@ -62,10 +64,9 @@ class BTSolver:
 
         else:
             # if initial call where board uninitialized, forward check on all assigned vars
-            for c in self.network.getConstraints():
-                for v in c.vars:
-                    if v.isAssigned():
-                        assigned_values.append(v)
+            for v in self.network.getVariables():
+                if v.isAssigned():
+                    assigned_values.append(v)
 
         for assigned_value in assigned_values:
 
@@ -183,14 +184,14 @@ class BTSolver:
     """
 
     def getMRV(self):
-        number_domain_values = list()
-        for c in self.network.getConstraints():
-            for v in c.vars:
-                if not v.isAssigned():
-                    number_domain_values.append((v, v.size()))
-        number_domain_values.sort(key=lambda x: x[1])
 
-        return number_domain_values[0][0]
+        return min((var for var in self.network.getConstraints() if not var.isAssigned()), key=lambda x: x.size())
+
+        # for v in self.network.getVariables():  # loop through all the constraints
+        #     if not v.isAssigned() and v.size() < min_values:
+        #         min_var = v
+        #         min_values = v.size()
+        # return min_var
 
     """
         Part 2 TODO: Implement the Minimum Remaining Value Heuristic
