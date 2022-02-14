@@ -216,13 +216,11 @@ class BTSolver:
         minimum_size = None
         smallest_domain_variable = None
 
-        for c in self.network.getConstraints():
-            for v in c.vars:
-                if not v.isAssigned():
-                    if minimum_size is None or v.size() < minimum_size:
-                        minimum_size = v.size()
-                        smallest_domain_variable = v
-        return smallest_domain_variable
+        for v in self.network.getVariables():
+            if not v.isAssigned() and (minimum_size is None or v.size() < minimum_size):
+                minimum_size = v.size()
+                smallest_domain_variable = v
+        return smallest_domain_variable  # supposed to return none if nothing left to assign
         # return min((var for var in self.network.getConstraints() if not var.isAssigned()), key=lambda x: x.size())
 
 
@@ -238,11 +236,18 @@ class BTSolver:
 
     def MRVwithTieBreaker(self):
 
-        minimum_remaining_value = self.getMRV().size()
-        min_remaining_value_vars = [var for var in self.network.getVariables() if var.size() == minimum_remaining_value]
-        maximum_degree = max(sum(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()) for var in min_remaining_value_vars)
+        mrv_variable = self.getMRV()
+        if mrv_variable is None:
+            return None
+
+        minimum_remaining_value = mrv_variable.size()
+        min_remaining_value_vars = [var for var in self.network.getVariables() if (var.size() == minimum_remaining_value and not var.isAssigned())]
+        maximum_degree = max(
+            max(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()) for var in
+            min_remaining_value_vars)
+        # I know it says to return a list, but that doesn't make sense as it can return none when there is no variables left to assign
         return [var for var in min_remaining_value_vars
-                if len(self.network.getNeighborsOfVariable(var)) == maximum_degree]
+                if max(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()) == maximum_degree][0]
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
@@ -360,7 +365,7 @@ class BTSolver:
             return self.getMRV()
 
         if self.varHeuristics == "MRVwithTieBreaker":
-            return self.MRVwithTieBreaker()[0]
+            return self.MRVwithTieBreaker()
 
         if self.varHeuristics == "tournVar":
             return self.getTournVar()
