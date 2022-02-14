@@ -213,7 +213,7 @@ class BTSolver:
     """
 
     def getMRV(self):
-	minimum_size = None
+        minimum_size = None
         smallest_domain_variable = None
 
         for c in self.network.getConstraints():
