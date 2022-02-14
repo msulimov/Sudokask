@@ -281,11 +281,11 @@ class BTSolver:
     def getValuesLCVOrder(self, var):
 
         return sorted(
-            (value for value in var.getDomain()), key=lambda x:
-                sum(1 for neighbor in self.network.getNeighborsOfVariable(var)
-                    if not neighbor.isAssigned() and x in neighbor.getDomain()
-                    )
+            (value for value in var.getValues()), key=lambda x:
+            sum(1 for neighbor in self.network.getNeighborsOfVariable(var)
+                if not neighbor.isAssigned() and x in neighbor.getValues()
                 )
+        )
 
     """
          Optional TODO: Implement your own advanced Value Heuristic
