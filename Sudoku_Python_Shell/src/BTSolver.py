@@ -213,8 +213,17 @@ class BTSolver:
     """
 
     def getMRV(self):
+	minimum_size = None
+        smallest_domain_variable = None
 
-        return min((var for var in self.network.getConstraints() if not var.isAssigned()), key=lambda x: x.size())
+        for c in self.network.getConstraints():
+            for v in c.vars:
+                if not v.isAssigned():
+                    if minimum_size is None or v.size() < minimum_size:
+                        minimum_size = v.size()
+                        smallest_domain_variable = v
+        return smallest_domain_variable
+        # return min((var for var in self.network.getConstraints() if not var.isAssigned()), key=lambda x: x.size())
 
 
 
