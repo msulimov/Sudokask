@@ -10,33 +10,50 @@ from Sudoku_Python_Shell.src import Variable
 
 
 def main():
-    args = sys.argv
+    # args = sys.argv
+    #
+    # # Important Variables
+    # variable_heuristic = ""
+    # value_heuristic = ""
+    # consistency_check = ""
+    #
+    # for arg in [args[i] for i in range(1, len(args))]:
+    #     if arg == "MRV":
+    #         variable_heuristic = "MinimumRemainingValue"
+    #
+    #     elif arg == "MAD":
+    #         variable_heuristic = "MRVwithTieBreaker"
+    #
+    #     elif arg == "LCV":
+    #         value_heuristic = "LeastConstrainingValue"
+    #
+    #     elif arg == "FC":
+    #         consistency_check = "forwardChecking"
+    #
+    #     elif arg == "NOR":
+    #         consistency_check = "norvigCheck"
+    #
+    #     elif arg == "TOURN":
+    #         variable_heuristic = "tournVar"
+    #         value_heuristic = "tournVal"
+    #         consistency_check = "tournCC"
 
-    # Important Variables
-    variable_heuristic = ""
-    value_heuristic = ""
-    consistency_check = ""
+    solver_settings = {
+        "FC": ("forwardChecking", "", ""),
+        "NOR": ("norvigCheck", "", ""),
+        "FC LCV": ("forwardChecking", "", "LeastConstrainingValue"),
+        "NOR LCV": ("norvigCheck", "", "LeastConstrainingValue"),
+        "FC MRV": ("forwardChecking", "MinimumRemainingValue", ""),
+        "NOR MRV": ("norvigCheck", "MinimumRemainingValue", ""),
+        "FC MAD": ("forwardChecking", "MRVwithTieBreaker", ""),
+        "NOR MAD": ("norvigCheck", "MRVwithTieBreaker", ""),
+        "FC MRV LCV": ("forwardChecking", "MinimumRemainingValue", "LeastConstrainingValue"),
+        "NOR MRV LCV": ("norvigCheck", "MinimumRemainingValue", "LeastConstrainingValue"),
+        "FC MAD LCV": ("forwardChecking", "MRVwithTieBreaker", "LeastConstrainingValue"),
+        "NOR MAD LCV": ("norvigCheck", "MRVwithTieBreaker", "LeastConstrainingValue"),
+        "TOURNAMENT1": ("tournCC", "tournVar", "tournVal")
 
-    for arg in [args[i] for i in range(1, len(args))]:
-        if arg == "MRV":
-            variable_heuristic = "MinimumRemainingValue"
-
-        elif arg == "MAD":
-            variable_heuristic = "MRVwithTieBreaker"
-
-        elif arg == "LCV":
-            value_heuristic = "LeastConstrainingValue"
-
-        elif arg == "FC":
-            consistency_check = "forwardChecking"
-
-        elif arg == "NOR":
-            consistency_check = "norvigCheck"
-
-        elif arg == "TOURN":
-            variable_heuristic = "tournVar"
-            value_heuristic = "tournVal"
-            consistency_check = "tournCC"
+    }
 
     # p rows, q cols, m values given initially
     easy_config = (3, 3, 7)
@@ -44,78 +61,137 @@ def main():
     hard_config = (4, 4, 20)
     expert_config = (5, 5, 30)
 
-    num_easy_trials = 500
-    num_intermediate_trials = 100
-    num_hard_trials = 50
-    num_expert_trials = 20
+    num_easy_trials = 100
+    num_intermediate_trials = 50
+    num_hard_trials = 20
+    num_expert_trials = 10
 
     trial_settings = (
         ("Easy", easy_config, num_easy_trials),
         ("Intermediate", intermediate_config, num_intermediate_trials),
         ("Hard", hard_config, num_hard_trials),
-        ("Expert", expert_config, num_expert_trials)
+        ("Expert", expert_config, num_expert_trials),
     )
+
+    solvers_to_benchmark = ["FC", "FC LCV"]
 
     for trial_name, difficulty_config, num_trials in trial_settings:
 
-        time_taken = 0
-        num_backtracks = 0
-        num_pushed = 0
-        num_failures = 0
-        print(f"-"*80)
-        print(f"Starting {trial_name} with {num_trials} trials")
-        for _ in print_progress_bar(range(num_trials), prefix=f"Progress", suffix="Trials Done", length=250):
+        boards = [SudokuBoard.SudokuBoard(*difficulty_config) for _ in range(num_trials)]
 
+        print(f"-" * 80)
+        print(
+            f"Starting {trial_name} with {num_trials} trials comparing: "
+            f"{' vs. '.join(solver_name for solver_name in solvers_to_benchmark)}"
+        )
+        print(f"-" * 80)
+
+        solver_backtrack_scores = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_backtrack_counts = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_last_backtrack_count = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_total_time_elapsed = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_time_scores = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_last_time_elapsed = {solver_name: 0 for solver_name in solvers_to_benchmark}
+        solver_failures = {solver_name: 0 for solver_name in solvers_to_benchmark}
+
+        current_solver_index = 0
+        current_solver_name = solvers_to_benchmark[current_solver_index]
+        progress_bar_prefix = [current_solver_name]
+        progress_bar_suffix = ["Last backtrack winner: N/A, Last time winner: N/A"]
+
+        for i in print_progress_bar(range(num_trials * len(solvers_to_benchmark)), len(solvers_to_benchmark),
+                                    prefix=progress_bar_prefix,
+                                    suffix=progress_bar_suffix,
+                                    length=150
+                                    ):
+
+            trial_number = i // len(solvers_to_benchmark)
             Trail.numPush = 0
             Trail.numUndo = 0
             trail = Trail()
             Variable.STATIC_NAMING_COUNTER = 1
-            sudoku_board = SudokuBoard.SudokuBoard(*difficulty_config)
+            sudoku_board = boards[trial_number]
+
+            consistency_check, variable_heuristic, value_heuristic = solver_settings[current_solver_name]
             solver = BTSolver.BTSolver(sudoku_board, trail, value_heuristic, variable_heuristic, consistency_check)
 
             current_time = time.time()
             solver.checkConsistency()
             solver.solve()
             end_time = time.time()
-            time_taken += end_time - current_time
+            time_taken = end_time - current_time
+            solver_total_time_elapsed[current_solver_name] += time_taken
+            solver_last_time_elapsed[current_solver_name] = time_taken
 
             if solver.hassolution:
-                num_backtracks += trail.getUndoCount()
-                num_pushed += trail.getPushCount()
+
+                solver_backtrack_counts[current_solver_name] += trail.getUndoCount()
+                solver_last_backtrack_count[current_solver_name] = trail.getUndoCount()
 
             else:
-                num_failures += 1
+                solver_last_backtrack_count[current_solver_name] = -1
+                solver_failures[current_solver_name] += 1
 
-        print(
-            f"Total time taken for {num_trials} trials: {time_taken} seconds\n"
-            f"Average time taken per trial: {time_taken/num_trials} seconds\n"
-            f"Average backtracks for successful solution: {num_backtracks/num_trials} backtracks\n"
-            f"Average trail pushes for successful solution: {num_pushed/num_trials} pushes\n"
-            f"Failure rate: {num_failures}/{num_trials}\n"
-        )
+            current_solver_index += 1
+            if current_solver_index == len(solvers_to_benchmark):
+                current_solver_index = 0
+                time_winner = min(
+                    (solver_name for solver_name in solvers_to_benchmark),
+                    key=lambda x: solver_last_time_elapsed[x]
+                )
+                solver_time_scores[time_winner] += 1
+                backtrack_winner = min(
+                    (solver_name for solver_name in solvers_to_benchmark
+                     if solver_last_backtrack_count[solver_name] != -1),
+                    key=lambda x: solver_last_backtrack_count[x], default="All Failed"
+                )
+                if backtrack_winner != "All Failed":
+                    solver_backtrack_scores[backtrack_winner] += 1
+                progress_bar_suffix[0] = \
+                    "Last backtrack winner: " + str(backtrack_winner) + \
+                    ", Last time winner: " + str(time_winner)
+
+            current_solver_name = solvers_to_benchmark[current_solver_index]
+            progress_bar_prefix[0] = current_solver_name
+
+        print('-' * 80)
+
+        print(f"Time stats between {', '.join(solver_name for solver_name in solvers_to_benchmark)}")
+        for solver_name in solvers_to_benchmark:
+            print(f"{solver_name} Number of wins: {solver_time_scores[solver_name]}, "
+                  f"average time per trial: {solver_total_time_elapsed[solver_name] / num_trials} seconds, "
+                  f"total time taken: {solver_total_time_elapsed[solver_name]} seconds")
+
+        print(f"Backtrack stats between {', '.join(solver_name for solver_name in solvers_to_benchmark)}")
+        for solver_name in solvers_to_benchmark:
+            print(f"{solver_name} Number of wins: {solver_backtrack_scores[solver_name]}, "
+                  f"average backtracks per trial: {solver_backtrack_counts[solver_name] / num_trials} backtracks"
+                  )
+
+        print(f"Failure stats between {', '.join(solver_name for solver_name in solvers_to_benchmark)}")
+        for solver_name in solvers_to_benchmark:
+            print(f"{solver_name} failures: {solver_failures[solver_name]} failures")
+
+        print('-' * 80)
 
 
-def print_progress_bar(iterable, prefix='', suffix='', decimals=1, length=100, fill='█', print_end="\r"):
+def print_progress_bar(iterable, num_solvers, prefix, suffix, length):
     # src: https://stackoverflow.com/questions/3173320/text-progress-bar-in-terminal-with-block-characters
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iterable    - Required  : iterable object (Iterable)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
+
+    fill = '█'
     total = len(iterable)
 
     # Progress Bar Printing Function
     def printProgressBar(iteration):
+        trial = iteration // num_solvers
         percent = f"{iteration}/{total}"
         filledLength = int(length * iteration // total)
         bar = fill * filledLength + '-' * (length - filledLength)
-        print(f'\rTrial #{iteration} |{bar}| {percent} {suffix}', end='')
+
+        current_solver_fixed_str = "{0: <15}".format(f"{prefix[0]}\'s turn")
+
+        print(f"\r{current_solver_fixed_str}, board #{trial}"
+              f" |{bar}| {percent} {suffix[0]}", end='')
 
     # Initial Call
     printProgressBar(0)

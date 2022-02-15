@@ -229,11 +229,11 @@ class BTSolver:
                                     (var.size() == minimum_remaining_var_domain_size and not var.isAssigned())]
         maximum_degree = \
             max(
-                (sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), start=0)
+                (sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
                  for var in min_remaining_value_vars))
 
         return [var for var in min_remaining_value_vars
-                if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), start=0)
+                if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
                 == maximum_degree]
 
     def getTournVar(self):
