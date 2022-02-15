@@ -147,30 +147,36 @@ class BTSolver:
         if not self.forwardChecking(**kwargs)[1]:  # first Norvig check which is Forward Checking
             return output_dict, False
 
-        n = self.gameboard.N  # number of different values each variable can take
-        value_freq = {}  # dict of values to count up with frequencies
 
+        n = self.gameboard.N  # number of different values each variable can take
+        value_freq = dict()  # dict of values to count up with frequencies
+        """
         if last_assigned_var is None:  # only check the most recently assigned variable's value
             for value in range(1, n + 1):
                 value_freq[value] = 0
         else:  # if from board initialization, check all the values
             value_freq[last_assigned_var.getDomain().values[0]] = 0
+        """
 
-        for value in range(1, n + 1):
-            value_freq[value] = 0
-
-        for var in self.network.getVariables():  # count up values from variables that have been assigned
-            if var.isAssigned():
-                value_freq[var.getDomain().values[0]] += 1
-
-        for value, count in value_freq.items():
-            if count == n - 1:  # if there is a value that needs to be assigned to one more spot
-                for var in self.network.getVariables():  # assign it to the var with the value in its domain
-                    if not var.isAssigned() and value in var.getDomain().values:
+        # Do the Norvig check for each constraint
+        for c in self.network.constraints:
+            for value in range(1, n + 1):
+                value_freq[value] = 0
+            for var in c.vars:
+                if not var.isAssigned():
+                    for value in var.getValues():
+                        value_freq[value] += 1  # adds elements in the domain
+            for value, count in value_freq.items():
+                for var in c.vars:
+                    # If the element is the only one in the domain, then assign it
+                    if count == 1 and not var.isAssigned() and var.isChangeable() and value in var.getValues():
                         self.trail.push(var)  # save original var to the trail for backtracking
                         var.assignValue(value)  # assign the value to the var
                         output_dict[var.getName()] = value  # save to output dict for grading
-                        # don't need to update neighbors since no other variables contain this value in their domain
+                        value_freq[value] = 0
+                        if not self.forwardChecking(last_assigned_var=var):
+                            return output_dict, False
+                        break
         return output_dict, self.assignmentsCheck()
 
     def getTournCC(self, **kwargs):
