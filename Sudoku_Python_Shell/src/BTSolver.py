@@ -37,7 +37,7 @@ class BTSolver:
                 return False
         return True
 
-    def forwardChecking(self, **kwargs) -> ({str: Domain}, bool):
+    def forwardChecking(self, last_assigned_vars: [Variable] = None) -> ({str: Domain}, bool):
 
         """
             This function will do both Constraint Propagation and check
@@ -53,19 +53,8 @@ class BTSolver:
         """
 
         output_dictionary = dict()
-        assigned_vars = list()
-
-        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
-
-        if last_assigned_var is not None:
-            # if called after assigning a var, do forward checking on its neighbors only
-            assigned_vars.append(last_assigned_var)
-
-        else:
-            # if initial call where board uninitialized, forward check on all assigned vars
-            for v in self.network.getVariables():
-                if v.isAssigned():
-                    assigned_vars.append(v)
+        assigned_vars = [v for v in last_assigned_vars] if last_assigned_vars is not None\
+            else [v for v in self.network.getVariables() if v.isAssigned()]
 
         for assigned_var in assigned_vars:
 
@@ -98,7 +87,7 @@ class BTSolver:
 
                         self.trail.push(neighbor)  # push to trail so can backtrack later
                         neighbor.assignValue(neighbor.domain.values[0])  # assign the last remaining value for neighbor
-                        if not self.forwardChecking(last_assigned_var=neighbor):  # perform recursive call
+                        if not self.forwardChecking(last_assigned_vars=[neighbor])[1]:  # perform recursive call
                             return output_dictionary, False
 
         return output_dictionary, self.assignmentsCheck()
@@ -106,24 +95,32 @@ class BTSolver:
     # =================================================================
     # Arc Consistency
     # =================================================================
-    def arcConsistency(self):
-        assignedVars = []
-        for c in self.network.constraints:
-            for v in c.vars:
+    def arcConsistency(self, last_assigned_vars: [Variable] = None) -> bool:
+
+        assigned_vars = []
+
+        if last_assigned_vars is not None:
+            for last_assigned_var in last_assigned_vars:
+                assigned_vars.append(last_assigned_var)
+        else:
+            for v in self.network.getVariables():
                 if v.isAssigned():
-                    assignedVars.append(v)
-        while len(assignedVars) != 0:
-            av = assignedVars.pop(0)
-            for neighbor in self.network.getNeighborsOfVariable(av):
+                    assigned_vars.append(v)
+
+        while len(assigned_vars) != 0:
+            assigned_var = assigned_vars.pop(0)
+            for neighbor in self.network.getNeighborsOfVariable(assigned_var):
                 if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(
-                        av.getAssignment()):
-                    neighbor.removeValueFromDomain(av.getAssignment())
+                        assigned_var.getAssignment()):
+                    self.trail.push(neighbor)
+                    neighbor.removeValueFromDomain(assigned_var.getAssignment())
                     if neighbor.domain.size() == 1:
+                        self.trail.push(neighbor)
                         neighbor.assignValue(neighbor.domain.values[0])
-                        assignedVars.append(neighbor)
+                        assigned_vars.append(neighbor)
         return self.assignmentsCheck()
 
-    def norvigCheck(self, **kwargs):
+    def norvigCheck(self, last_assigned_vars: [Variable] = None) -> ({str: int}, bool):
         """
         This function will do both Constraint Propagation and check
         the consistency of the network
@@ -139,34 +136,43 @@ class BTSolver:
             The bool is true if assignment is consistent, false otherwise.
         """
 
-        output_dict = {}
+        output_dict = {}  # output the variables assigned by norvig's check for grading
 
-        if not self.forwardChecking(**kwargs)[1]:  # first Norvig check which is Forward Checking
+        if not self.forwardChecking(last_assigned_vars=last_assigned_vars)[1]:
             return output_dict, False
 
         n = self.gameboard.N  # number of different values each variable can take
-        value_freq = [0 for _ in range(n+1)]  # dict of values to count up with frequencies
+        value_freq = [0] * (n + 1)  # array of values to count up with frequencies
 
-        # Do the Norvig check for each constraint
         for c in self.network.getConstraints():
+
             for value in range(1, n + 1):
                 value_freq[value] = 0
             for var in c.vars:
-                for value in var.getValues():
-                    value_freq[value] += 1  # adds elements in the domain
+                if not var.isAssigned():
+                    for value in var.getValues():
+                        value_freq[value] += 1  # adds elements in the domain
+
             for value, count in enumerate(value_freq[1:], start=1):
                 if count == 1:
-                    for var in c.vars:
-                        # If the element is the only one in the domain, then assign it
-                        if not var.isAssigned() and value in var.getValues():
-                            self.trail.push(var)  # save original var to the trail for backtracking
-                            var.assignValue(value)  # assign the value to the var
-                            output_dict[var.getName()] = value  # save to output dict for grading
-                            value_freq[value] = 0
-                            if not self.forwardChecking(last_assigned_var=var):
-                                return output_dict, False
-                            break
-        return output_dict, self.assignmentsCheck()
+
+                    vars_to_assign = [var for var in c.vars if value in var.getValues()]
+
+                    # another assigned var invalidated domain of var, but constraint still needs value
+                    if len(vars_to_assign) == 0:
+                        return output_dict, False
+                    # single var found, assign and do a forward check on it
+                    var = vars_to_assign[0]
+                    if len(vars_to_assign) == 1 and not var.isAssigned():
+
+                        self.trail.push(var)  # save original var to the trail for backtracking
+                        var.assignValue(value)  # assign the value to the var
+                        output_dict[var.getName()] = value  # save to output dict for grading
+
+                        if not self.forwardChecking(last_assigned_vars=[var])[1]:
+                            return output_dict, False
+
+        return output_dict, True
 
     def getTournCC(self, **kwargs):
         """
@@ -200,7 +206,7 @@ class BTSolver:
         """
             Returns: The unassigned variable with the smallest domain or None if there are no more variables to assign
         """
-        # returns the minimum var that is unassigned based on it's domain size
+        # returns the minimum var that is unassigned based on its domain size
         return min(
             (var for var in self.network.getVariables() if not var.isAssigned()),
             key=lambda x: x.size(),
@@ -281,7 +287,7 @@ class BTSolver:
     # Engine Functions
     # ==================================================================
 
-    def solve(self, time_left=60):
+    def solve(self, time_left=6000.0):
         if time_left <= 0:
             return -1
 
@@ -309,7 +315,7 @@ class BTSolver:
             v.assignValue(i)
 
             # Propagate constraints, check consistency, recur
-            if self.checkConsistency(last_assigned_var=v):  # add variable last assigned for optimized checking
+            if self.checkConsistency(last_assigned_vars=[v]):  # add variable last assigned for optimized checking
                 elapsed_time = time.time() - start_time
                 new_start_time = time_left - elapsed_time
                 if self.solve(time_left=new_start_time) == -1:
@@ -324,18 +330,16 @@ class BTSolver:
 
         return 0
 
-    def checkConsistency(self, **kwargs):
-
-        last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
+    def checkConsistency(self, last_assigned_vars: [Variable] = None):
 
         if self.cChecks == "forwardChecking":
-            return self.forwardChecking(last_assigned_var=last_assigned_var)[1]
+            return self.forwardChecking(last_assigned_vars=last_assigned_vars)[1]
 
         if self.cChecks == "norvigCheck":
-            return self.norvigCheck(last_assigned_var=last_assigned_var)[1]
+            return self.norvigCheck(last_assigned_vars=last_assigned_vars)[1]
 
         if self.cChecks == "tournCC":
-            return self.getTournCC(last_assigned_var=last_assigned_var)
+            return self.getTournCC(last_assigned_vars=last_assigned_vars)
 
         else:
             return self.assignmentsCheck()

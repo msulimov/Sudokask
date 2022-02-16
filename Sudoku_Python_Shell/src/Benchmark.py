@@ -61,10 +61,10 @@ def main():
     hard_config = (4, 4, 20)
     expert_config = (5, 5, 30)
 
-    num_easy_trials = 100
-    num_intermediate_trials = 50
-    num_hard_trials = 20
-    num_expert_trials = 10
+    num_easy_trials = 1
+    num_intermediate_trials = 1
+    num_hard_trials = 1
+    num_expert_trials = 1
 
     trial_settings = (
         ("Easy", easy_config, num_easy_trials),
@@ -73,7 +73,7 @@ def main():
         ("Expert", expert_config, num_expert_trials),
     )
 
-    solvers_to_benchmark = ["NOR MRV LCV", "FC MRV LCV"]
+    solvers_to_benchmark = ["FC", "NOR"]
 
     for trial_name, difficulty_config, num_trials in trial_settings:
 
