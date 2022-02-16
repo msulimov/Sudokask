@@ -73,12 +73,13 @@ def main():
         ("Expert", expert_config, num_expert_trials),
     )
 
-    solvers_to_benchmark = ["FC", "FC LCV"]
+    solvers_to_benchmark = ["NOR MRV LCV", "FC MRV LCV"]
 
     for trial_name, difficulty_config, num_trials in trial_settings:
 
         boards = [SudokuBoard.SudokuBoard(*difficulty_config) for _ in range(num_trials)]
 
+        print()
         print(f"-" * 80)
         print(
             f"Starting {trial_name} with {num_trials} trials comparing: "
@@ -162,11 +163,15 @@ def main():
                   f"average time per trial: {solver_total_time_elapsed[solver_name] / num_trials} seconds, "
                   f"total time taken: {solver_total_time_elapsed[solver_name]} seconds")
 
+        print('-'*80)
+
         print(f"Backtrack stats between {', '.join(solver_name for solver_name in solvers_to_benchmark)}")
         for solver_name in solvers_to_benchmark:
             print(f"{solver_name} Number of wins: {solver_backtrack_scores[solver_name]}, "
                   f"average backtracks per trial: {solver_backtrack_counts[solver_name] / num_trials} backtracks"
                   )
+
+        print(f"-" * 80)
 
         print(f"Failure stats between {', '.join(solver_name for solver_name in solvers_to_benchmark)}")
         for solver_name in solvers_to_benchmark:
