@@ -82,13 +82,13 @@ class BTSolver:
                     if neighbor.domain.size() == 0:
                         return output_dictionary, False
 
-                    # If neighbor has only 1 value in domain, assign it and check consistency
-                    elif neighbor.domain.size() == 1:
-
-                        self.trail.push(neighbor)  # push to trail so can backtrack later
-                        neighbor.assignValue(neighbor.domain.values[0])  # assign the last remaining value for neighbor
-                        if not self.forwardChecking(last_assigned_vars=[neighbor])[1]:  # perform recursive call
-                            return output_dictionary, False
+                    # Arc consistency neighbor has only 1 value in domain, assign it and check consistency
+                    # elif neighbor.domain.size() == 1:
+                    #
+                    #     self.trail.push(neighbor)  # push to trail so can backtrack later
+                    #     neighbor.assignValue(neighbor.domain.values[0]) # assign the last remaining value for neighbor
+                    #     if not self.forwardChecking(last_assigned_vars=[neighbor])[1]:  # perform recursive call
+                    #         return output_dictionary, False
 
         return output_dictionary, self.assignmentsCheck()
 
@@ -124,13 +124,10 @@ class BTSolver:
         """
         This function will do both Constraint Propagation and check
         the consistency of the network
-
         (1) If a variable is assigned then eliminate that value from
             the square's neighbors.
-
         (2) If a constraint has only one possible place for a value
             then put the value there.
-
         Returns: a pair of a dictionary and a bool. The dictionary contains all variables that were ASSIGNED during
             the whole NorvigCheck propagation, and mapped to the values that they were assigned.
             The bool is true if assignment is consistent, false otherwise.
@@ -267,12 +264,12 @@ class BTSolver:
 
     def getValuesLCVOrder(self, var):
 
-        return sorted(
+        return list(sorted(
             (value for value in var.getValues()), key=lambda x:
             sum(1 for neighbor in self.network.getNeighborsOfVariable(var)
                 if not neighbor.isAssigned() and x in neighbor.getValues()
                 )
-        )
+        ))
 
     def getTournVal(self, v):
         """
