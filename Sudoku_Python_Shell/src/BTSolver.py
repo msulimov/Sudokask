@@ -204,11 +204,16 @@ class BTSolver:
             Returns: The unassigned variable with the smallest domain or None if there are no more variables to assign
         """
         # returns the minimum var that is unassigned based on its domain size
-        return min(
+        min_var = min(
             (var for var in self.network.getVariables() if not var.isAssigned()),
             key=lambda x: x.size(),
             default=None
         )
+        if min_var is None:
+            return None
+        else:  # The TA said that the Solution tiebreaks by choosing the last element
+            output_list = [var for var in self.network.getVariables() if not var.isAssigned() and var.size() == min_var.size()]
+            return output_list[-1]
 
     def MRVwithTieBreaker(self):
         """
