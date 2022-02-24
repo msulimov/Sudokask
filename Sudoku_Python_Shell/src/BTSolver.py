@@ -74,7 +74,7 @@ class BTSolver:
                     neighbor.removeValueFromDomain(assigned_var.getAssignment())
 
                     # update output dictionary with new neighbor's domain for grading
-                    output_dictionary[neighbor.getName()] = neighbor.getDomain()
+                    output_dictionary[neighbor] = neighbor.getDomain()
 
                     # do some further O(1) checks to see if assignment consistent
 
@@ -164,7 +164,7 @@ class BTSolver:
 
                         self.trail.push(var)  # save original var to the trail for backtracking
                         var.assignValue(value)  # assign the value to the var
-                        output_dict[var.getName()] = value  # save to output dict for grading
+                        output_dict[var] = value  # save to output dict for grading
 
                         if not self.forwardChecking(last_assigned_vars=[var])[1]:
                             return output_dict, False
