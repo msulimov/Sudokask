@@ -170,7 +170,45 @@ class BTSolver:
                             return output_dict, False
 
         return output_dict, True
+    
+    def hidden_pair_prune(self):
+        """
+            If a pair of candidates occurs in exactly two unit cells, and none
+            of its members is a candidate in the other unit cells. Then,
+            we can eliminate all of the other candidates in the two unit cells
+        """
+        n = self.gameboard.N  # number of different values each variable can take
+        value_freq = [0] * (n + 1)  # array of values to count up with frequencies
 
+        for c in self.network.getConstraints():
+            variables_to_consider = dict()
+            for value in range(1, n + 1):
+                value_freq[value] = 0
+            for var in c.vars:
+                if not var.isAssigned():
+                    for value in var.getValues():
+                        value_freq[value] += 1  # adds elements in the domain
+
+            for value, count in enumerate(value_freq[1:], start=1):
+                if count == 2:  # If a value appears twice, could be a potential hidden pair
+                    # There should be two variables in this list
+                    variables_to_consider[value] = [var for var in c.vars if value in var.getValues()
+                                                    and not var.isAssigned()]
+                    # Iterate through the stored possible hidden pairs and sees if there is an actual hidden pair
+                    for iter_value in variables_to_consider.keys():
+                        if iter_value != value:
+                            if (variables_to_consider[iter_value][0] in variables_to_consider[value] and
+                                    variables_to_consider[iter_value][1] in variables_to_consider[value]):
+                                first_variable = variables_to_consider[value][0]
+                                second_variable = variables_to_consider[value][1]
+                                self.trail.push(first_variable)
+                                first_variable.setDomain(Domain([value, iter_value]))
+
+                                self.trail.push(second_variable)
+                                second_variable.setDomain(Domain([value, iter_value]))
+                                del variables_to_consider[iter_value]
+                                del variables_to_consider[value]
+                                break
     def getTournCC(self, **kwargs):
         """
              TODO: Implement your own advanced Constraint Propagation
@@ -181,9 +219,9 @@ class BTSolver:
         last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
 
         if last_assigned_var is None:  # if initial board, perform arc-consistency
-            if not self.checkConsistency():
+            if not self.arcConsistency():
                 return False
-
+        self.hidden_pair_prune()
         return self.norvigCheck(**kwargs)[1]
 
     # ==================================================================
@@ -241,7 +279,7 @@ class BTSolver:
              Completing the three tourn heuristic will automatically enter
              your program into a tournament.
         """
-        return None
+        return self.MRVwithTieBreaker()[0]
 
     # ==================================================================
     # Value Selectors
@@ -278,7 +316,7 @@ class BTSolver:
              Completing the three tourn heuristic will automatically enter
              your program into a tournament.
         """
-        return None
+        return self.getValuesLCVOrder(v)
 
     # ==================================================================
     # Engine Functions
