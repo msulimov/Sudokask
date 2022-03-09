@@ -180,7 +180,7 @@ class BTSolver:
         n = self.gameboard.N  # number of different values each variable can take
         value_freq = [0] * (n + 1)  # array of values to count up with frequencies
 
-        for c in self.network.getConstraints():
+                for c in self.network.getConstraints():
             variables_to_consider = dict()
             for value in range(1, n + 1):
                 value_freq[value] = 0
@@ -189,7 +189,8 @@ class BTSolver:
                     for value in var.getValues():
                         value_freq[value] += 1  # adds elements in the domain
 
-            for value, count in enumerate(value_freq[1:], start=1):
+            for value in range(1, len(value_freq)):
+                count = value_freq[value]
                 if count == 2:  # If a value appears twice, could be a potential hidden pair
                     # There should be two variables in this list
                     variables_to_consider[value] = [var for var in c.vars if value in var.getValues()
@@ -197,7 +198,9 @@ class BTSolver:
                     # Iterate through the stored possible hidden pairs and sees if there is an actual hidden pair
                     for iter_value in variables_to_consider.keys():
                         if iter_value != value:
-                            if (len(variables_to_consider) == 2 and variables_to_consider[iter_value][0] in variables_to_consider[value] and
+                            # There is apparently an error in the following if statement, index out of range error,
+                            # This should have been fixed
+                            if (variables_to_consider[iter_value][0] in variables_to_consider[value] and
                                     variables_to_consider[iter_value][1] in variables_to_consider[value]):
                                 first_variable = variables_to_consider[value][0]
                                 second_variable = variables_to_consider[value][1]
@@ -206,6 +209,7 @@ class BTSolver:
 
                                 self.trail.push(second_variable)
                                 second_variable.setDomain(Domain([value, iter_value]))
+
                                 del variables_to_consider[iter_value]
                                 del variables_to_consider[value]
                                 # Update the counts again, since it would have changed
