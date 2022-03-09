@@ -209,6 +209,40 @@ class BTSolver:
                                 del variables_to_consider[iter_value]
                                 del variables_to_consider[value]
                                 break
+    
+    def naked_pair_pruning(self):
+        """
+        A pair is called naked if it is lonely in a cell.
+        If a pair is naked in two unit cells, then it can be dropped from all the other unit cells.
+        Following the same logic of hidden pairs.
+        """
+        n = self.gameboard.N  # number of different values each variable can take
+        value_freq = [0] * (n + 1)  # array of values to count up with frequencies
+
+        for c in self.network.getConstraints():
+            pairs_to_consider = dict()
+            for value in range(1, n + 1):
+                value_freq[value] = 0
+            for var in c.vars:
+                if not var.isAssigned():
+                    if len(var.getValues()) == 2:
+                        try:
+                            pairs_to_consider[tuple(var.getValues())] += 1
+                        except KeyError:
+                            pairs_to_consider[tuple(var.getValues())] = 1
+
+            for key, value in pairs_to_consider.items():
+                if value >= 2:  # There might be more than 2 which should result in an automatic backtrack
+                    variables_to_consider = [var for var in c.vars if key == tuple(var.getValues())][0:2]
+                    for var in c.vars:
+                        if key[0] in var.getValues() and var not in variables_to_consider:
+                            self.trail.push(var)
+                            var.removeValueFromDomain(key[0])
+
+                        if key[1] in var.getValues() and var not in variables_to_consider:
+                            self.trail.push(var)
+                            var.removeValueFromDomain(key[1])    
+    
     def getTournCC(self, **kwargs):
         """
              TODO: Implement your own advanced Constraint Propagation
@@ -222,6 +256,7 @@ class BTSolver:
             if not self.arcConsistency():
                 return False
         self.hidden_pair_prune()
+        self.naked_pair_pruning()
         return self.norvigCheck(**kwargs)[1]
 
     # ==================================================================
