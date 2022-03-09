@@ -140,34 +140,33 @@ class BTSolver:
 
         n = self.gameboard.N  # number of different values each variable can take
         value_freq = [0] * (n + 1)  # array of values to count up with frequencies
+        has_assigned = 1
+        while has_assigned == 1:
+            has_assigned = 0
+            for c in self.network.getConstraints():
+                for value in range(1, n + 1):
+                    value_freq[value] = 0
+                for var in c.vars:
+                    if not var.isAssigned():
+                        for value in var.getValues():
+                            value_freq[value] += 1  # adds elements in the domain
 
-        for c in self.network.getConstraints():
-
-            for value in range(1, n + 1):
-                value_freq[value] = 0
-            for var in c.vars:
-                if not var.isAssigned():
-                    for value in var.getValues():
-                        value_freq[value] += 1  # adds elements in the domain
-
-            for value, count in enumerate(value_freq[1:], start=1):
-                if count == 1:
-
-                    vars_to_assign = [var for var in c.vars if value in var.getValues()]
-
-                    # another assigned var invalidated domain of var, but constraint still needs value
-                    if len(vars_to_assign) == 0:
-                        return output_dict, False
-                    # single var found, assign and do a forward check on it
-                    var = vars_to_assign[0]
-                    if len(vars_to_assign) == 1 and not var.isAssigned():
-
-                        self.trail.push(var)  # save original var to the trail for backtracking
-                        var.assignValue(value)  # assign the value to the var
-                        output_dict[var] = value  # save to output dict for grading
-
-                        if not self.forwardChecking(last_assigned_vars=[var])[1]:
+                for value, count in enumerate(value_freq[1:], start=1):
+                    if count == 1:
+                        vars_to_assign = [var for var in c.vars if value in var.getValues()]
+                        # another assigned var invalidated domain of var, but constraint still needs value
+                        if len(vars_to_assign) == 0:
                             return output_dict, False
+                        # single var found, assign and do a forward check on it
+                        var = vars_to_assign[0]
+                        if len(vars_to_assign) == 1 and not var.isAssigned():
+
+                            self.trail.push(var)  # save original var to the trail for backtracking
+                            var.assignValue(value)  # assign the value to the var
+                            output_dict[var] = value  # save to output dict for grading
+                            has_assigned = 1
+                            if not self.forwardChecking(last_assigned_vars=[var])[1]:
+                                return output_dict, False
 
         return output_dict, True
     
