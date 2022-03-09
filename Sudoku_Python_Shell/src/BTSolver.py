@@ -368,7 +368,7 @@ class BTSolver:
     # Engine Functions
     # ==================================================================
 
-    def solve(self, time_left=6000.0):
+    def solve(self, time_left=600):
         if time_left <= 0:
             return -1
 
