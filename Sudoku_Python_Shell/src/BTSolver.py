@@ -197,7 +197,7 @@ class BTSolver:
                     # Iterate through the stored possible hidden pairs and sees if there is an actual hidden pair
                     for iter_value in variables_to_consider.keys():
                         if iter_value != value:
-                            if (variables_to_consider[iter_value][0] in variables_to_consider[value] and
+                            if (len(variables_to_consider) == 2 and variables_to_consider[iter_value][0] in variables_to_consider[value] and
                                     variables_to_consider[iter_value][1] in variables_to_consider[value]):
                                 first_variable = variables_to_consider[value][0]
                                 second_variable = variables_to_consider[value][1]
@@ -208,6 +208,13 @@ class BTSolver:
                                 second_variable.setDomain(Domain([value, iter_value]))
                                 del variables_to_consider[iter_value]
                                 del variables_to_consider[value]
+                                # Update the counts again, since it would have changed
+                                for value in range(1, n + 1):
+                                    value_freq[value] = 0
+                                for var in c.vars:
+                                    if not var.isAssigned():
+                                        for value in var.getValues():
+                                            value_freq[value] += 1  # adds elements in the domain
                                 break
     
     def naked_pair_pruning(self):
