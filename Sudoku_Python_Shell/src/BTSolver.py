@@ -83,12 +83,10 @@ class BTSolver:
                         return output_dictionary, False
 
                     # Arc consistency neighbor has only 1 value in domain, assign it and check consistency
-                    # elif neighbor.domain.size() == 1:
-                    #
-                    #     self.trail.push(neighbor)  # push to trail so can backtrack later
-                    #     neighbor.assignValue(neighbor.domain.values[0]) # assign the last remaining value for neighbor
-                    #     if not self.forwardChecking(last_assigned_vars=[neighbor])[1]:  # perform recursive call
-                    #         return output_dictionary, False
+                    elif neighbor.domain.size() == 1:
+                        self.trail.push(neighbor)  # push to trail so can backtrack later
+                        neighbor.assignValue(neighbor.domain.values[0]) # assign the last remaining value for neighbor
+                        assigned_vars.append(neighbor)
 
         return output_dictionary, self.assignmentsCheck()
 
