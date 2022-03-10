@@ -179,7 +179,7 @@ class BTSolver:
         n = self.gameboard.N  # number of different values each variable can take
         value_freq = [0] * (n + 1)  # array of values to count up with frequencies
 
-                for c in self.network.getConstraints():
+        for c in self.network.getConstraints():
             variables_to_consider = dict()
             for value in range(1, n + 1):
                 value_freq[value] = 0
@@ -195,10 +195,11 @@ class BTSolver:
                     variables_to_consider[value] = [var for var in c.vars if value in var.getValues()
                                                     and not var.isAssigned()]
                     # Iterate through the stored possible hidden pairs and sees if there is an actual hidden pair
-                    for iter_value in variables_to_consider.keys():
-                        if iter_value != value:
+                    for iter_value in variables_to_consider:
+                        if iter_value != value and len(variables_to_consider[iter_value]) > 1:
                             # There is apparently an error in the following if statement, index out of range error,
                             # This should have been fixed
+
                             if (variables_to_consider[iter_value][0] in variables_to_consider[value] and
                                     variables_to_consider[iter_value][1] in variables_to_consider[value]):
                                 first_variable = variables_to_consider[value][0]
