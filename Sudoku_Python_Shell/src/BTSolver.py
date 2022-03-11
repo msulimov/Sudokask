@@ -355,8 +355,12 @@ class BTSolver:
                     if value_freq[value] == max_frequency:
                         third_tie_break_list.append(var)
                         break
+            if len(third_tie_break_list) == 0:
+                return [None]
             return third_tie_break_list
         else:
+            if len(second_tie_break_list) == 0:
+                return [None]
             return second_tie_break_list
 
     def getTournVar(self):
