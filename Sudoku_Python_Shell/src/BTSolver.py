@@ -167,7 +167,7 @@ class BTSolver:
                                 return output_dict, False
 
         return output_dict, True
-
+    
     def hidden_pair_prune(self):
         """
             If a pair of candidates occurs in exactly two unit cells, and none
@@ -218,7 +218,7 @@ class BTSolver:
                                         for value in var.getValues():
                                             value_freq[value] += 1  # adds elements in the domain
                                 break
-
+    
     def naked_pair_pruning(self):
         """
         A pair is called naked if it is lonely in a cell.
@@ -327,7 +327,7 @@ class BTSolver:
         min_remaining_value_vars = [var for var in self.network.getVariables() if
                                     (var.size() == minimum_remaining_var_domain_size and not var.isAssigned())]
         if len(min_remaining_value_vars) <= 1:
-            return min_remaining_value_vars
+            return min_remaining_value_vars if len(min_remaining_value_vars) != 0 else [None]
 
         minimum_degree = \
             min(sum(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned())
@@ -337,7 +337,7 @@ class BTSolver:
                                      if not neighbor.isAssigned()) == minimum_degree
                                  ]
         if len(second_tie_break_list) <= 1:
-            return second_tie_break_list
+            return second_tie_break_list if len(second_tie_break_list) != 0 else [None]
 
         n = self.gameboard.N  # number of different values each variable can take
         value_freq = [0] * (n + 1)  # array of values to count up with frequencies
@@ -350,7 +350,7 @@ class BTSolver:
 
         third_tie_break_list = [var for var in second_tie_break_list
                                 if max(value_freq[value] for value in var.getValues()) == max_frequency]
-        return third_tie_break_list
+        return third_tie_break_list if len(third_tie_break_list) != 0 else [None]
 
     def getTournVar(self):
         """
