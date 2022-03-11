@@ -346,10 +346,11 @@ class BTSolver:
             if var.isAssigned():
                 value_freq[var.getAssignment()] += 1
 
-        max_frequency = max(value_freq[value] for var in second_tie_break_list for value in var.getValues())
+        max_frequency = max((value_freq[value] for var in second_tie_break_list for value in var.getValues()),
+                            default=-1)
 
         third_tie_break_list = [var for var in second_tie_break_list
-                                if max(value_freq[value] for value in var.getValues()) == max_frequency]
+                                if max((value_freq[value] for value in var.getValues()), default=-1) == max_frequency]
         return third_tie_break_list if len(third_tie_break_list) != 0 else [None]
 
     def getTournVar(self):

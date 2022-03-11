@@ -63,7 +63,7 @@ def main():
 
     num_easy_trials = 1
     num_intermediate_trials = 1
-    num_hard_trials = 1500
+    num_hard_trials = 500
     num_expert_trials = 1
 
     trial_settings = (
