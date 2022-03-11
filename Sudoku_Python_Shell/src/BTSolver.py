@@ -167,7 +167,7 @@ class BTSolver:
                                 return output_dict, False
 
         return output_dict, True
-    
+
     def hidden_pair_prune(self):
         """
             If a pair of candidates occurs in exactly two unit cells, and none
@@ -218,7 +218,7 @@ class BTSolver:
                                         for value in var.getValues():
                                             value_freq[value] += 1  # adds elements in the domain
                                 break
-    
+
     def naked_pair_pruning(self):
         """
         A pair is called naked if it is lonely in a cell.
@@ -250,8 +250,8 @@ class BTSolver:
 
                         if key[1] in var.getValues() and var not in variables_to_consider:
                             self.trail.push(var)
-                            var.removeValueFromDomain(key[1])    
-    
+                            var.removeValueFromDomain(key[1])
+
     def getTournCC(self, **kwargs):
         """
              TODO: Implement your own advanced Constraint Propagation
@@ -317,7 +317,7 @@ class BTSolver:
         return [var for var in min_remaining_value_vars
                 if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
                 == maximum_degree]
-    
+
     def MRV_LRV(self):
         mrv_variable = self.getMRV()
         if mrv_variable is None:
@@ -326,38 +326,31 @@ class BTSolver:
         minimum_remaining_var_domain_size = mrv_variable.size()
         min_remaining_value_vars = [var for var in self.network.getVariables() if
                                     (var.size() == minimum_remaining_var_domain_size and not var.isAssigned())]
+        if len(min_remaining_value_vars) <= 1:
+            return min_remaining_value_vars
+
         minimum_degree = \
-            min(
-                (sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
-                 for var in min_remaining_value_vars))
-
-        second_tie_break_list = [var for var in min_remaining_value_vars
-                if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
-                == minimum_degree]
-
-        if len(second_tie_break_list) > 1:
-            n = self.gameboard.N  # number of different values each variable can take
-            value_freq = [0] * (n + 1)  # array of values to count up with frequencies
-
-            for var in self.network.getVariables():
-                if var.isAssigned():
-                    value_freq[var.getAssignment()] += 1
-
-            max_frequency = -1
-            for var in second_tie_break_list:
-                for value in var.getValues():
-                    if value_freq[value] > max_frequency:
-                        max_frequency = value_freq[value]
-
-            third_tie_break_list = []
-            for var in second_tie_break_list:
-                for value in var.getValues():
-                    if value_freq[value] == max_frequency:
-                        third_tie_break_list.append(var)
-                        break
-            return third_tie_break_list
-        else:
+            min(sum(1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned())
+                for var in min_remaining_value_vars)
+        second_tie_break_list = [var for var in min_remaining_value_vars if
+                                 sum(1 for neighbor in self.network.getNeighborsOfVariable(var)
+                                     if not neighbor.isAssigned()) == minimum_degree
+                                 ]
+        if len(second_tie_break_list) <= 1:
             return second_tie_break_list
+
+        n = self.gameboard.N  # number of different values each variable can take
+        value_freq = [0] * (n + 1)  # array of values to count up with frequencies
+
+        for var in self.network.getVariables():
+            if var.isAssigned():
+                value_freq[var.getAssignment()] += 1
+
+        max_frequency = max(value_freq[value] for var in second_tie_break_list for value in var.getValues())
+
+        third_tie_break_list = [var for var in second_tie_break_list
+                                if max(value_freq[value] for value in var.getValues()) == max_frequency]
+        return third_tie_break_list
 
     def getTournVar(self):
         """
@@ -395,7 +388,7 @@ class BTSolver:
                 if not neighbor.isAssigned() and x in neighbor.getValues()
                 )
         ))
-    
+
     def getValuesMFVOrder(self, v):
         n = self.gameboard.N  # number of different values each variable can take
         value_freq = [0] * (n + 1)  # array of values to count up with frequencies
@@ -403,10 +396,8 @@ class BTSolver:
         for var in self.network.getVariables():
             if var.isAssigned():
                 value_freq[var.getAssignment()] += 1
-        output_list = [value for value in v.getValues()]
-        output_list.sort(key=lambda x: value_freq[x], reverse=True)
-        return output_list
-    
+        return sorted((value for value in v.getValues()), key=lambda x: value_freq[x], reverse=True)
+
     def getTournVal(self, v):
         """
              TODO: Implement your own advanced Value Heuristic
