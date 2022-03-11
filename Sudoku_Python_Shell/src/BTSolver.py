@@ -317,6 +317,47 @@ class BTSolver:
         return [var for var in min_remaining_value_vars
                 if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
                 == maximum_degree]
+    
+    def MRV_LRV(self):
+        mrv_variable = self.getMRV()
+        if mrv_variable is None:
+            return [None]
+
+        minimum_remaining_var_domain_size = mrv_variable.size()
+        min_remaining_value_vars = [var for var in self.network.getVariables() if
+                                    (var.size() == minimum_remaining_var_domain_size and not var.isAssigned())]
+        minimum_degree = \
+            min(
+                (sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
+                 for var in min_remaining_value_vars))
+
+        second_tie_break_list = [var for var in min_remaining_value_vars
+                if sum((1 for neighbor in self.network.getNeighborsOfVariable(var) if not neighbor.isAssigned()), 0)
+                == minimum_degree]
+
+        if len(second_tie_break_list) > 1:
+            n = self.gameboard.N  # number of different values each variable can take
+            value_freq = [0] * (n + 1)  # array of values to count up with frequencies
+
+            for var in self.network.getVariables():
+                if var.isAssigned():
+                    value_freq[var.getAssignment()] += 1
+
+            max_frequency = -1
+            for var in second_tie_break_list:
+                for value in var.getValues():
+                    if value_freq[value] > max_frequency:
+                        max_frequency = value_freq[value]
+
+            third_tie_break_list = []
+            for var in second_tie_break_list:
+                for value in var.getValues():
+                    if value_freq[value] == max_frequency:
+                        third_tie_break_list.append(var)
+                        break
+            return third_tie_break_list
+        else:
+            return second_tie_break_list
 
     def getTournVar(self):
         """
@@ -325,7 +366,7 @@ class BTSolver:
              Completing the three tourn heuristic will automatically enter
              your program into a tournament.
         """
-        return self.MRVwithTieBreaker()[0]
+        return self.MRV_LRV()[0]
 
     # ==================================================================
     # Value Selectors
@@ -354,7 +395,18 @@ class BTSolver:
                 if not neighbor.isAssigned() and x in neighbor.getValues()
                 )
         ))
+    
+    def getValuesMFVOrder(self, v):
+        n = self.gameboard.N  # number of different values each variable can take
+        value_freq = [0] * (n + 1)  # array of values to count up with frequencies
 
+        for var in self.network.getVariables():
+            if var.isAssigned():
+                value_freq[var.getAssignment()] += 1
+        output_list = [value for value in v.getValues()]
+        output_list.sort(key=lambda x: value_freq[x], reverse=True)
+        return output_list
+    
     def getTournVal(self, v):
         """
              TODO: Implement your own advanced Value Heuristic
@@ -362,7 +414,7 @@ class BTSolver:
              Completing the three tourn heuristic will automatically enter
              your program into a tournament.
         """
-        return self.getValuesLCVOrder(v)
+        return self.getValuesMFVOrder(v)
 
     # ==================================================================
     # Engine Functions
