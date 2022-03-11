@@ -265,7 +265,7 @@ class BTSolver:
             if not self.arcConsistency():
                 return False
 
-        if self.gameboard.n > 9:
+        if self.gameboard.N > 9:
             self.hidden_pair_prune()
             self.naked_pair_pruning()
         return self.norvigCheck(**kwargs)[1]
