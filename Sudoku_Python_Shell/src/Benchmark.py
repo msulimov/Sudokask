@@ -64,7 +64,7 @@ def main():
     num_easy_trials = 1
     num_intermediate_trials = 1
     num_hard_trials = 1
-    num_expert_trials = 100
+    num_expert_trials = 500
 
     trial_settings = (
         ("Easy", easy_config, num_easy_trials),
