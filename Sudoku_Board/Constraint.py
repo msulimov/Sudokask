@@ -1,4 +1,4 @@
-import Variable
+from Sudoku_Board import Variable
 
 """
     Constraint represents a NotEquals constraint on a set of variables.

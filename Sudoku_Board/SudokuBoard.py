@@ -1,7 +1,4 @@
-import itertools
 import random
-import Constraint
-import Variable
 
 """
     Represents a Sudoku Board. This is converted to a constraint network,

@@ -1,5 +1,4 @@
-import Trail
-import Domain
+from Sudoku_Board import Domain
 
 """
     Represents a variable in a CSP
@@ -18,7 +17,7 @@ class Variable:
         self.name = "v" + str(STATIC_NAMING_COUNTER)
         STATIC_NAMING_COUNTER += 1
 
-        self.domain = Domain.Domain( possible_Values )
+        self.domain = Domain.Domain(possible_Values)
         self.row = row
         self.col = col
         self.block = block
@@ -88,7 +87,7 @@ class Variable:
             return
 
         self.assigned = True
-        self.setDomain( Domain.Domain( val ) )
+        self.setDomain(Domain.Domain(val))
 
     # Sets the domain of the variable
     def setDomain ( self, d ):
