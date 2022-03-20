@@ -8,7 +8,9 @@ import time
 
 
 def main():
-
+    # settings dict of the solver names and
+    # a tuple storing the (consistency check, variable selection heuristic and value selection heuristic)
+    # an empty string specifies no heuristic (ie: returning the vars/values in random order)
     solver_settings = {
         "FC": ("forwardChecking", "", ""),
         "NOR": ("norvigCheck", "", ""),
@@ -26,12 +28,14 @@ def main():
 
     }
 
-    # p rows, q cols, m values given initially
+    # easy, intermediate, hard, expert sudoku board configurations represented
+    # as a tuple with p rows per block, q cols per block, and m values given initially (the board size n is p*q)
     easy_config = (3, 3, 7)
     intermediate_config = (3, 4, 11)
     hard_config = (4, 4, 20)
     expert_config = (5, 5, 30)
 
+    # number of trials to perform for each sudoku board difficulty
     num_easy_trials = 1000
     num_intermediate_trials = 500
     num_hard_trials = 250
@@ -44,9 +48,13 @@ def main():
         ("Expert", expert_config, num_expert_trials),
     )
 
+    # names of the solvers in the solver_settings dict to compare during each trial
     solvers_to_benchmark = ["NOR MAD LCV", "TOURNAMENT1"]
 
     for trial_name, difficulty_config, num_trials in trial_settings:
+
+        if num_trials <= 0:
+            continue
 
         boards = [SudokuBoard.SudokuBoard(*difficulty_config) for _ in range(num_trials)]
 
