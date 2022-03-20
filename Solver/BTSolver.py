@@ -1,6 +1,6 @@
-from Variable import Variable
-from Domain import Domain
-import ConstraintNetwork
+from Sudoku_Board.Variable import Variable
+from Sudoku_Board.Domain import Domain
+from Sudoku_Board import ConstraintNetwork
 import time
 
 
@@ -55,7 +55,7 @@ class BTSolver:
             # loop through all the neighbors of assigned vars
             for neighbor in self.network.getNeighborsOfVariable(assigned_var):
 
-                # if neighbor not an initial variable on sudoku board
+                # if neighbor not an initial variable on sudoku sample_board.txt
                 # and the neighbor is not yet assigned
                 # and neighbor's domain contains the newly assigned variable's value
                 if neighbor.isChangeable and not neighbor.isAssigned() and \
@@ -255,7 +255,7 @@ class BTSolver:
         """
         last_assigned_var = kwargs["last_assigned_var"] if "last_assigned_var" in kwargs else None
 
-        if last_assigned_var is None:  # if initial board, perform arc-consistency
+        if last_assigned_var is None:  # if initial sample_board.txt, perform arc-consistency
             if not self.arcConsistency():
                 return False
 

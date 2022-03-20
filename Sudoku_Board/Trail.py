@@ -1,5 +1,4 @@
-# import copy
-import Domain
+from Sudoku_Board import Domain
 
 """
     Represents the trail of changes made. This allows backtracking to occur.

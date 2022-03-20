@@ -1,41 +1,13 @@
 #!/usr/bin/env python3
+import os
 
-import SudokuBoard
-import BTSolver
-from Trail import Trail
+from Sudoku_Board import SudokuBoard, Variable
+from Solver import BTSolver
+from Sudoku_Board.Trail import Trail
 import time
-
-import Variable
 
 
 def main():
-    # args = sys.argv
-    #
-    # # Important Variables
-    # variable_heuristic = ""
-    # value_heuristic = ""
-    # consistency_check = ""
-    #
-    # for arg in [args[i] for i in range(1, len(args))]:
-    #     if arg == "MRV":
-    #         variable_heuristic = "MinimumRemainingValue"
-    #
-    #     elif arg == "MAD":
-    #         variable_heuristic = "MRVwithTieBreaker"
-    #
-    #     elif arg == "LCV":
-    #         value_heuristic = "LeastConstrainingValue"
-    #
-    #     elif arg == "FC":
-    #         consistency_check = "forwardChecking"
-    #
-    #     elif arg == "NOR":
-    #         consistency_check = "norvigCheck"
-    #
-    #     elif arg == "TOURN":
-    #         variable_heuristic = "tournVar"
-    #         value_heuristic = "tournVal"
-    #         consistency_check = "tournCC"
 
     solver_settings = {
         "FC": ("forwardChecking", "", ""),
@@ -60,10 +32,10 @@ def main():
     hard_config = (4, 4, 20)
     expert_config = (5, 5, 30)
 
-    num_easy_trials = 1
-    num_intermediate_trials = 1
-    num_hard_trials = 1
-    num_expert_trials = 250
+    num_easy_trials = 1000
+    num_intermediate_trials = 500
+    num_hard_trials = 250
+    num_expert_trials = 100
 
     trial_settings = (
         ("Easy", easy_config, num_easy_trials),
@@ -113,6 +85,7 @@ def main():
             sudoku_board = boards[trial_number]
 
             consistency_check, variable_heuristic, value_heuristic = solver_settings[current_solver_name]
+
             solver = BTSolver.BTSolver(sudoku_board, trail, value_heuristic, variable_heuristic, consistency_check)
 
             current_time = time.time()

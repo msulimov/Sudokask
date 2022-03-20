@@ -1,6 +1,6 @@
-import Variable
-import Constraint
-import SudokuBoard
+from Sudoku_Board import Variable
+from Sudoku_Board import Constraint
+from Sudoku_Board import SudokuBoard
 from math import floor
 
 """

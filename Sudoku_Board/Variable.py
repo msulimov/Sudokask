@@ -1,4 +1,4 @@
-import Domain
+from Sudoku_Board import Domain
 
 """
     Represents a variable in a CSP

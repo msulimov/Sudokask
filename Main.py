@@ -1,112 +1,91 @@
-#!/usr/bin/env python3
-
 import sys
 import os
-import SudokuBoard
-import BTSolver
-import Trail
+from Sudoku_Board import SudokuBoard, Trail
+from Solver.BTSolver import BTSolver
 
-"""
-    Main driver file, which is responsible for interfacing with the
-    command line and properly starting the backtrack solver.
-"""
+# Main driver file, which is responsible for interfacing with the
+# command line and properly starting the backtracking solver.
 
-def main ( ):
+if __name__ == "__main__":
     args = sys.argv
 
-    # Important Variables
-    file   = "";
-    var_sh = "";
-    val_sh = "";
-    cc     = "";
+    file = None
 
-    for arg in [args[i] for i in range(1, len(args))]:
-        if arg == "MRV":
-            var_sh = "MinimumRemainingValue"
+    print(os.getcwd())
 
-        elif arg == "MAD":
-            var_sh = "MRVwithTieBreaker"
+    if len(args) == 2:
+        file = args[1]
 
-        elif arg == "LCV":
-            val_sh = "LeastConstrainingValue"
+    if file is None:  # solve a random sample_board.txt of size 3x3 with 7 values specified
 
-        elif arg == "FC":
-            cc = "forwardChecking"
-
-        elif arg == "NOR":
-            cc = "norvigCheck"
-
-        elif arg == "TOURN":
-            var_sh = "tournVar"
-            val_sh = "tournVal"
-            cc     = "tournCC"
-
-        else:
-            file = arg;
-
-    trail = Trail.Trail();
-
-    if file == "":
         sudokudata = SudokuBoard.SudokuBoard(3, 3, 7)
+        trail = Trail.Trail()
         print(sudokudata)
 
-        solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
-        if cc in ["forwardChecking","norvigCheck","tournCC"]:
-            solver.checkConsistency()
+        solver = BTSolver(sudokudata, trail, "tournVal", "tournVar", "tournCC")
+        solver.checkConsistency()
         solver.solve()
 
         if solver.hassolution:
-            print( solver.getSolution() )
-            print( "Trail Pushes: " + str(trail.getPushCount()) )
-            print( "Backtracks: " + str(trail.getUndoCount()) )
+            print(solver.getSolution())
+            print("Trail Pushes: " + str(trail.getPushCount()))
+            print("Backtracks: " + str(trail.getUndoCount()))
 
         else:
-            print( "Failed to find a solution" )
+            print("Failed to find a solution")
+        exit(0)
 
-        return
+    elif os.path.isfile(file):
 
-    if os.path.isdir(file):
+        sudokudata = SudokuBoard.SudokuBoard(filepath=os.path.abspath(file))
+        trail = Trail.Trail()
+        print(sudokudata)
+
+        solver = BTSolver(sudokudata, trail, "tournVal", "tournVar", "tournCC")
+        solver.checkConsistency()
+        solver.solve()
+
+        if solver.hassolution:
+            print(solver.getSolution())
+            print("Trail Pushes: " + str(trail.getPushCount()))
+            print("Backtracks: " + str(trail.getUndoCount()))
+
+        else:
+            print("Failed to find a solution")
+
+    elif os.path.isdir(file):
         listOfBoards = None
 
         try:
-            listOfBoards = os.listdir ( file )
+            listOfBoards = os.listdir(file)
         except:
-            print ( "[ERROR] Failed to open directory." )
-            return
+            print("[ERROR] Failed to open directory.")
+            exit(1)
 
         numSolutions = 0
         for f in listOfBoards:
-            print ( "Running board: " + str(f) )
+            print("Running board: " + str(f))
+            trail = Trail.Trail()
             sudokudata = SudokuBoard.SudokuBoard(filepath=os.path.join(file, f))
 
-            solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
-            if cc in ["forwardChecking","norvigCheck","tournCC"]:
-                solver.checkConsistency()
+            print(sudokudata)
+            solver = BTSolver(sudokudata, trail, "tournVal", "tournVar", "tournCC")
+            solver.checkConsistency()
             solver.solve()
 
             if solver.hassolution:
-                numSolutions += 1;
+                print(solver.getSolution())
+                print("Trail Pushes: " + str(trail.getPushCount()))
+                print("Backtracks: " + str(trail.getUndoCount()))
+                numSolutions += 1
 
-        print ( "Solutions Found: " + str(numSolutions) )
-        print ( "Trail Pushes: " + str(trail.getPushCount()) )
-        print ( "Backtracks: "  + str(trail.getUndoCount()) )
-
-        return
-
-    sudokudata =  SudokuBoard.SudokuBoard(filepath=os.path.abspath(file))
-    print(sudokudata)
-
-    solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
-    if cc in ["forwardChecking","norvigCheck","tournCC"]:
-        solver.checkConsistency()
-    solver.solve()
-
-    if solver.hassolution:
-        print( solver.getSolution() )
-        print( "Trail Pushes: " + str(trail.getPushCount()) )
-        print( "Backtracks: " + str(trail.getUndoCount()) )
+            else:
+                print("Failed to find a solution")
 
     else:
-        print( "Failed to find a solution" )
+        print("Invalid parameters.\n"
+              "To solve a random board, run with no command line arguments\n"
+              "To solve a specific board, enter the board's file location\n"
+              "To solve a set of boards, enter the directory containing the board files\n"
+              )
 
-main()
