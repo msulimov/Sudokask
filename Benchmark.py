@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
 import SudokuBoard
 import BTSolver
 from Trail import Trail
 import time
 
-from Sudoku_Python_Shell.src import Variable
+import Variable
 
 
 def main():
@@ -63,8 +62,8 @@ def main():
 
     num_easy_trials = 1
     num_intermediate_trials = 1
-    num_hard_trials = 500
-    num_expert_trials = 1
+    num_hard_trials = 1
+    num_expert_trials = 250
 
     trial_settings = (
         ("Easy", easy_config, num_easy_trials),

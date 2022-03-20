@@ -35,7 +35,7 @@ class ConstraintNetwork:
                         domain.append(value)
 
                     block = int(((floor(i/sboard.p) * sboard.p) + floor(j/sboard.q)))
-                    temp.append(Variable.Variable(domain,i,j,block))
+                    temp.append(Variable.Variable(domain, i, j, block))
 
             rows = dict()
             cols = dict()
@@ -192,4 +192,4 @@ class ConstraintNetwork:
             if col == n:
                 col = 0
                 row += 1
-        return SudokuBoard.SudokuBoard( p, q, board = board )
+        return SudokuBoard.SudokuBoard(p, q, board = board)

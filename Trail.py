@@ -1,7 +1,5 @@
 # import copy
-import Variable
 import Domain
-import copy
 
 """
     Represents the trail of changes made. This allows backtracking to occur.
@@ -52,7 +50,7 @@ class Trail:
     """
     def push ( self, v ):
         Trail.numPush += 1
-        domainCopy = Domain.Domain( [i for i in v.getValues()] )
+        domainCopy = Domain.Domain([i for i in v.getValues()])
         vPair = [v, domainCopy]
         self.trailStack.append(vPair)
 

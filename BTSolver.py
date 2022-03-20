@@ -1,13 +1,7 @@
-import sys
-
-import SudokuBoard
 from Variable import Variable
 from Domain import Domain
-import Trail
-import Constraint
 import ConstraintNetwork
 import time
-import random
 
 
 class BTSolver:

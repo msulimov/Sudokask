@@ -2,13 +2,9 @@
 
 import sys
 import os
-import math
 import SudokuBoard
-import Constraint
-import ConstraintNetwork
 import BTSolver
 import Trail
-import time
 
 """
     Main driver file, which is responsible for interfacing with the
@@ -51,10 +47,10 @@ def main ( ):
     trail = Trail.Trail();
 
     if file == "":
-        sudokudata = SudokuBoard.SudokuBoard( 3, 3, 7 )
+        sudokudata = SudokuBoard.SudokuBoard(3, 3, 7)
         print(sudokudata)
 
-        solver = BTSolver.BTSolver( sudokudata, trail, val_sh, var_sh, cc )
+        solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
         if cc in ["forwardChecking","norvigCheck","tournCC"]:
             solver.checkConsistency()
         solver.solve()
@@ -81,9 +77,9 @@ def main ( ):
         numSolutions = 0
         for f in listOfBoards:
             print ( "Running board: " + str(f) )
-            sudokudata = SudokuBoard.SudokuBoard( filepath=os.path.join( file, f ) )
+            sudokudata = SudokuBoard.SudokuBoard(filepath=os.path.join(file, f))
 
-            solver = BTSolver.BTSolver( sudokudata, trail, val_sh, var_sh, cc )
+            solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
             if cc in ["forwardChecking","norvigCheck","tournCC"]:
                 solver.checkConsistency()
             solver.solve()
@@ -97,10 +93,10 @@ def main ( ):
 
         return
 
-    sudokudata =  SudokuBoard.SudokuBoard( filepath=os.path.abspath( file ) )
+    sudokudata =  SudokuBoard.SudokuBoard(filepath=os.path.abspath(file))
     print(sudokudata)
 
-    solver = BTSolver.BTSolver( sudokudata, trail, val_sh, var_sh, cc )
+    solver = BTSolver.BTSolver(sudokudata, trail, val_sh, var_sh, cc)
     if cc in ["forwardChecking","norvigCheck","tournCC"]:
         solver.checkConsistency()
     solver.solve()
